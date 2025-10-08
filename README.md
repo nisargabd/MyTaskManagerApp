@@ -5,7 +5,7 @@ It provides REST APIs to add, view, update, and delete tasks.
 
 ---
 
-## Features
+##  Features
 - CRUD operations for tasks  
 - PostgreSQL database with Sequelize ORM  
 - Organized MVC structure  
