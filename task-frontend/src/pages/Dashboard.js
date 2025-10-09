@@ -16,30 +16,56 @@ const Dashboard = () => {
     fetchTasks();
   }, []);
 
-  const handleAddTask = async (task) => {
+  const handleAdd = async (taskData) => {
     if (editingTask) {
-      await updateTask(editingTask.id, task);
+      await updateTask(editingTask.id, taskData);
       setEditingTask(null);
     } else {
-      await createTask(task);
+      await createTask(taskData);
     }
     fetchTasks();
   };
 
-  const handleEditTask = (task) => {
+  const handleEdit =async (task) => {
+    await updateTask(task.id, task);
+    fetchTasks();
     setEditingTask(task);
   };
 
-  const handleDeleteTask = async (id) => {
+  const handleCancelEdit = () => {
+    setEditingTask(null);
+  };
+
+  const handleDelete = async (id) => {
     await deleteTask(id);
     fetchTasks();
   };
 
+  const handleStatusChange = async (id, newStatus) => {
+    // find the task
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    await updateTask(id, { ...task, status: newStatus });
+    fetchTasks();
+  };
+
   return (
-    <div className="dashboard">
-      <h2>Task Management Dashboard</h2>
-      <TaskForm onSubmit={handleAddTask} existingTask={editingTask} />
-      <TaskList tasks={tasks} onEdit={handleEditTask} onDelete={handleDeleteTask} />
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <TaskForm
+          onSubmit={handleAdd}
+          existingTask={editingTask}
+          onCancel={handleCancelEdit}
+        />
+      </div>
+      <div>
+        <TaskList
+          tasks={tasks}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStatusChange={handleStatusChange}
+        />
+      </div>
     </div>
   );
 };

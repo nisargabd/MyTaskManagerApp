@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(cors());
 app.use(morgan('dev'));  // Use morgan for logging(debugging)
 
-app.use('/api/tasks',tasksRouter)
+app.use('/tasks',tasksRouter)
 
 // default route
 app.get('/',(req,res)=>{

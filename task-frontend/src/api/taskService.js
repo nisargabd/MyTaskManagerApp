@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/tasks';
+const API_URL = 'http://localhost:5000/tasks';
 
 export const createTask = async (task) =>{
     const response = await axios.post(API_URL, task);

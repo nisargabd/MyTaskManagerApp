@@ -1,18 +1,21 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import "./App.css";
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <h1>Task Management App</h1>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-        </Routes>
-      </div>
-    </Router>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-indigo-600 text-white shadow">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <h1 className="text-3xl font-bold">Task Management Dashboard</h1>
+        </div>
+      </header>
+
+      <main>
+        <Dashboard />
+      </main>
+    </div>
   );
 }
 
