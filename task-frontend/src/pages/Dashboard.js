@@ -6,6 +6,8 @@ import { getAllTasks, createTask, updateTask, deleteTask } from "../api/taskServ
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [editingTask, setEditingTask] = useState(null);
+  // view: 'list' | 'form'
+  const [view, setView] = useState("list");
 
   const fetchTasks = async () => {
     const data = await getAllTasks();
@@ -16,55 +18,81 @@ const Dashboard = () => {
     fetchTasks();
   }, []);
 
-  const handleAdd = async (taskData) => {
+  const handleSave = async (taskData) => {
     if (editingTask) {
-      await updateTask(editingTask.id, taskData);
+      await updateTask(editingTask.id, { ...editingTask, ...taskData });
       setEditingTask(null);
     } else {
       await createTask(taskData);
     }
-    fetchTasks();
+    await fetchTasks();
+    setView("list");
   };
 
-  const handleEdit =async (task) => {
-    await updateTask(task.id, task);
-    fetchTasks();
+  const handleEdit = (task) => {
+    // open the form with the existing task data
     setEditingTask(task);
+    setView("form");
   };
 
-  const handleCancelEdit = () => {
+  const handleCancel = () => {
     setEditingTask(null);
+    setView("list");
   };
 
   const handleDelete = async (id) => {
     await deleteTask(id);
-    fetchTasks();
+    await fetchTasks();
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    // find the task
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
     await updateTask(id, { ...task, status: newStatus });
-    fetchTasks();
+    await fetchTasks();
   };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <TaskForm
-          onSubmit={handleAdd}
-          existingTask={editingTask}
-          onCancel={handleCancelEdit}
-        />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Your Tasks</h2>
+          <p className="text-sm text-gray-500">Manage and track your tasks</p>
+        </div>
+        {view === "list" && (
+          <div>
+            <button
+              onClick={() => { setEditingTask(null); setView("form"); }}
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 transition"
+            >
+              + Add Task
+            </button>
+          </div>
+        )}
       </div>
+
       <div>
-        <TaskList
-          tasks={tasks}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onStatusChange={handleStatusChange}
-        />
+        {view === "form" ? (
+          <div className="mb-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-700">{editingTask ? "Edit Task" : "Add Task"}</h3>
+              <button
+                onClick={handleCancel}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+            </div>
+            <TaskForm onSubmit={handleSave} existingTask={editingTask} onCancel={handleCancel} />
+          </div>
+        ) : (
+          <TaskList
+            tasks={tasks}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onStatusChange={handleStatusChange}
+          />
+        )}
       </div>
     </div>
   );
