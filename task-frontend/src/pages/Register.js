@@ -1,98 +1,98 @@
-// src/pages/Register.js
+// frontend/src/pages/Register.jsx
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const Register = () => {
-  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("user"); // default role = user
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
+      await axios.post("http://localhost:5000/api/auth/register", {
         name,
         email,
         password,
+        role,
       });
 
-      await Swal.fire({
+      // 🎉 Success alert + redirect to login
+      Swal.fire({
         icon: "success",
-        title: "Registered",
-        text: "Registration successful. Redirecting to login...",
-        timer: 1400,
-        showConfirmButton: false,
+        title: "Registration Successful!",
+        text: "You can now login with your credentials.",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        window.location.href = "/login";
       });
-
-      navigate("/login");
     } catch (err) {
-      console.error(err);
-      const message = err.response?.data?.message || err.message || "Registration failed";
       Swal.fire({
         icon: "error",
-        title: "Registration error",
-        text: message,
+        title: "Registration Failed",
+        text: err.response?.data?.message || "Something went wrong!",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
-      <div className="card shadow p-4" style={{ width: "420px" }}>
-        <h3 className="text-center mb-3 text-success">Create an account</h3>
-
+      <div className="card shadow p-4" style={{ width: "400px" }}>
+        <h3 className="text-center mb-3 text-success">Register</h3>
         <form onSubmit={handleRegister}>
           <div className="mb-3">
-            <label className="form-label">Name</label>
+            <label>Name</label>
             <input
               type="text"
               className="form-control"
-              placeholder="Your full name"
+              placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
-
           <div className="mb-3">
-            <label className="form-label">Email</label>
+            <label>Email</label>
             <input
               type="email"
               className="form-control"
-              placeholder="you@example.com"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
-
           <div className="mb-3">
-            <label className="form-label">Password</label>
+            <label>Password</label>
             <input
               type="password"
               className="form-control"
-              placeholder="Create a password"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
 
-          <button type="submit" className="btn btn-success w-100" disabled={loading}>
-            {loading ? "Registering..." : "Register"}
+          {/* 🧠 Role Selection */}
+          <div className="mb-3">
+            <label>Role</label>
+            <select
+              className="form-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <button type="submit" className="btn btn-success w-100">
+            Register
           </button>
         </form>
-
         <p className="text-center mt-3 mb-0">
           Already have an account?{" "}
           <a href="/login" className="text-decoration-none">

@@ -1,4 +1,3 @@
-// src/pages/Login.js
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -13,39 +12,33 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const res = await axios.post("http://localhost:5000/api/auth/login", {
         email,
         password,
       });
 
-      const token = res.data?.token;
-      const user = res.data?.user;
+      const { token } = res.data;
+      if (!token) throw new Error("No token returned from server");
 
-      if (!token) {
-        throw new Error("No token returned from server");
-      }
-
-      // Save token + optional user info
       localStorage.setItem("token", token);
-      if (user) localStorage.setItem("user", JSON.stringify(user));
 
-      await Swal.fire({
+      Swal.fire({
         icon: "success",
-        title: "Logged in",
-        text: "Redirecting to your dashboard...",
-        timer: 900,
+        title: "Login Successful",
+        text: "Redirecting to dashboard...",
+        timer: 1200,
         showConfirmButton: false,
+      }).then(() => {
+        navigate("/", { replace: true });
       });
-
-      navigate("/");
     } catch (err) {
       console.error(err);
-      const message = err.response?.data?.message || err.message || "Invalid credentials";
       Swal.fire({
         icon: "error",
-        title: "Login failed",
-        text: message,
+        title: "Login Failed",
+        text: err.response?.data?.message || "Invalid credentials",
       });
     } finally {
       setLoading(false);
@@ -55,15 +48,14 @@ const Login = () => {
   return (
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
       <div className="card shadow p-4" style={{ width: "420px" }}>
-        <h3 className="text-center mb-3 text-primary">Welcome back</h3>
+        <h3 className="text-center mb-3 text-primary">Welcome Back</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label">Email</label>
+            <label>Email</label>
             <input
               type="email"
               className="form-control"
-              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -72,11 +64,10 @@ const Login = () => {
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Password</label>
+            <label>Password</label>
             <input
               type="password"
               className="form-control"
-              placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -90,10 +81,7 @@ const Login = () => {
         </form>
 
         <p className="text-center mt-3 mb-0">
-          Don’t have an account?{" "}
-          <a href="/register" className="text-decoration-none">
-            Register
-          </a>
+          Don’t have an account? <a href="/register">Register</a>
         </p>
       </div>
     </div>

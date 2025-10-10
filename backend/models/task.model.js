@@ -1,5 +1,6 @@
 const {DataTypes} = require('sequelize');
 const {sequelize} = require('../config/db');    
+const User = require("./userModel");
 
 const Task = sequelize.define(
     'Task',
@@ -28,5 +29,7 @@ const Task = sequelize.define(
     }
 
 );
+User.hasMany(Task, { foreignKey: "userId", onDelete: "CASCADE" });
+Task.belongsTo(User, { foreignKey: "userId" });
 
 module.exports = Task;

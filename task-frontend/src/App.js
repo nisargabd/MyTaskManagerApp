@@ -1,17 +1,14 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-
-import 'bootstrap/dist/css/bootstrap.min.css';
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-// Protected route component
+// Protected route wrapper
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!token) return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -27,11 +24,11 @@ function App() {
 
         <main>
           <Routes>
-            {/* Public Routes */}
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected Dashboard Route */}
+            {/* Normal Dashboard */}
             <Route
               path="/"
               element={
