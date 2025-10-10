@@ -1,4 +1,3 @@
-// ...existing code...
 require('dotenv').config();
 
 const express = require('express');
@@ -6,11 +5,13 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const { sequelize } = require('./config/db');
-require('./models/task.model'); // ensure Task model is registered
 
-// importing routes
+// initialize models (models/index.js)
+const db = require('./models');
+
+const authRoutes = require('./routes/auth');
 const tasksRouter = require('./routes/tasks');
-const authRoutes = require('./routes/authRoutes'); // adjust to './routes/authRoutes' if your file is named authRoutes.js
+const adminRouter = require('./routes/admin');
 
 const app = express();
 
@@ -22,18 +23,23 @@ app.use(cors({
 }));
 app.use(morgan('dev'));
 
-app.use('/api', tasksRouter);
+// mount routers
 app.use('/api/auth', authRoutes);
+app.use('/api/tasks', tasksRouter);
+app.use('/api/admin', adminRouter);
 
 // default route
 app.get('/', (req, res) => {
   res.send('Task Management Application is running...');
 });
 
-// global error handler (err, req, res, next)
+// 404 JSON fallback
+app.use((req, res) => res.status(404).json({ message: 'Not Found' }));
+
+// error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err?.message || err);
-  res.status(500).json({ error: err?.message || 'Internal Server Error' });
+  console.error('Unhandled error:', err?.stack || err);
+  res.status(500).json({ message: err?.message || 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;
@@ -42,11 +48,10 @@ const PORT = process.env.PORT || 5000;
   try {
     await sequelize.sync({ alter: true }); // sync models with DB
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`Server listening on port ${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);
   }
 })();
-// ...existing code...

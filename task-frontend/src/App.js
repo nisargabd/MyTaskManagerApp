@@ -1,37 +1,90 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-
-import 'bootstrap/dist/css/bootstrap.min.css';
+import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
 // Protected route component
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+function ProtectedRoute({ children, allowedRoles }) {
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
   return children;
-};
+}
+
+function NavBar() {
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user") || "null"));
+
+  // keep navbar in sync across tabs and after login/logout
+  useEffect(() => {
+    const onStorage = () => setUser(JSON.parse(localStorage.getItem("user") || "null"));
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const onLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    window.location.href = "/login";
+  };
+
+  return (
+    <nav className="bg-white shadow-sm px-4 py-3 mb-6">
+      <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Link to="/" className="text-lg font-semibold text-gray-800">
+            Task Management App
+          </Link>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          {user && user.role === "admin" && (
+            <Link to="/admin" className="text-sm text-indigo-600 hover:underline">
+              Admin
+            </Link>
+          )}
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-gray-700">Welcome, {user.username || user.email}</span>
+              <button onClick={onLogout} className="px-3 py-1 bg-red-500 text-white rounded">
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div>
+              <Link to="/login" className="text-sm text-indigo-600 hover:underline">
+                Login
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-indigo-600 text-white shadow">
-          <div className="max-w-5xl mx-auto px-4 py-4">
-            <h1 className="text-3xl font-bold">Task Management Dashboard</h1>
-          </div>
-        </header>
-
-        <main>
+        <NavBar />
+        <div className="container mx-auto px-4">
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected Dashboard Route */}
+            {/* Protected Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/"
               element={
@@ -44,7 +97,7 @@ function App() {
             {/* Redirect unknown routes */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </main>
+        </div>
       </div>
     </Router>
   );

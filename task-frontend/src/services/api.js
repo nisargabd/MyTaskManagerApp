@@ -1,0 +1,27 @@
+import axios from 'axios';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: API_BASE,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  console.log('[api] request to', config.url, 'attach token:', !!token);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+}, (error) => Promise.reject(error));
+
+api.interceptors.response.use((r) => r, (error) => {
+  if (error?.response?.status === 401) {
+    console.warn('[api] 401 -> clearing auth and redirecting to /login');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') window.location.href = '/login';
+  }
+  return Promise.reject(error);
+});
+
+export default api;

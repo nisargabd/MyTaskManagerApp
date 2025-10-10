@@ -1,105 +1,98 @@
 // src/pages/Register.js
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import Swal from "sweetalert2"; // ✅ import SweetAlert2
+import { register } from "../services/authService";
 
 const Register = () => {
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("user");
+  const [err, setErr] = useState("");
+  const nav = useNavigate();
 
-  const handleRegister = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setErr("");
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
-        name,
-        email,
-        password,
-      });
+      const data = await register({ username, email, password, role });
 
-      await Swal.fire({
-        icon: "success",
-        title: "Registered",
-        text: "Registration successful. Redirecting to login...",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+      // ✅ If successful registration
+      if (data?.user) {
+        await Swal.fire({
+          icon: "success",
+          title: "Registration Successful!",
+          text: "You can now log in to your account.",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+        nav("/login"); // ✅ redirect to login page
+      }
+    } catch (ex) {
+      const message = ex?.response?.data?.message || ex.message || "Register failed";
+      setErr(message);
+      console.error("Register error:", ex);
 
-      navigate("/login");
-    } catch (err) {
-      console.error(err);
-      const message = err.response?.data?.message || err.message || "Registration failed";
+      // ❌ show error alert
       Swal.fire({
         icon: "error",
-        title: "Registration error",
+        title: "Registration Failed",
         text: message,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
-      <div className="card shadow p-4" style={{ width: "420px" }}>
-        <h3 className="text-center mb-3 text-success">Create an account</h3>
+    <div className="max-w-md mx-auto p-6 bg-white shadow-lg rounded-md mt-8">
+      <h2 className="text-2xl font-semibold mb-4 text-center">Register</h2>
 
-        <form onSubmit={handleRegister}>
-          <div className="mb-3">
-            <label className="form-label">Name</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
+      {err && <div className="text-red-600 mb-2 text-center">{err}</div>}
 
-          <div className="mb-3">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
+      <form onSubmit={submit}>
+        <input
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+          required
+        />
+        <input
+          placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+          required
+        />
+        <input
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+          required
+        />
 
-          <div className="mb-3">
-            <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
+        <label className="block mb-3">
+          Role
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full p-2 border rounded mt-1"
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
 
-          <button type="submit" className="btn btn-success w-100" disabled={loading}>
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </form>
-
-        <p className="text-center mt-3 mb-0">
-          Already have an account?{" "}
-          <a href="/login" className="text-decoration-none">
-            Login
-          </a>
-        </p>
-      </div>
+        <button
+          type="submit"
+          className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Register
+        </button>
+      </form>
     </div>
   );
 };

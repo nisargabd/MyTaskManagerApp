@@ -1,112 +1,103 @@
-import React, { useEffect, useState } from "react";
-import TaskForm from "../components/TaskForm";
-import TaskList from "../components/TaskList";
-import { getAllTasks, createTask, updateTask, deleteTask } from "../api/taskService";
+import React, { useEffect, useState, useRef } from 'react';
+import { fetchTasks, deleteTask } from '../services/taskService';
+import TaskForm from '../components/TaskForm';
+import { useNavigate } from 'react-router-dom';
 
-const Dashboard = () => {
+export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
-  const [editingTask, setEditingTask] = useState(null);
-  // view: 'list' | 'form'
-  const [view, setView] = useState("list");
-
-  const fetchTasks = async () => {
-    const data = await getAllTasks();
-    setTasks(data);
-  };
+  const [err, setErr] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null); // task being edited
+  const nav = useNavigate();
+  const didFetchRef = useRef(false);
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const handleSave = async (taskData) => {
-    if (editingTask) {
-      await updateTask(editingTask.id, { ...editingTask, ...taskData });
-      setEditingTask(null);
-    } else {
-      await createTask(taskData);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      nav('/login');
+      return;
     }
-    await fetchTasks();
-    setView("list");
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+
+    (async () => {
+      try {
+        const data = await fetchTasks();
+        setTasks(data || []);
+      } catch (e) {
+        setErr(e?.response?.data?.message || e.message || 'Failed to load tasks');
+      }
+    })();
+  }, [nav]);
+
+  const onCreated = (task) => {
+    setTasks(prev => [task, ...prev]);
+    setShowForm(false);
   };
 
-  const handleEdit = (task) => {
-    // open the form with the existing task data
-    setEditingTask(task);
-    setView("form");
-  };
-
-  const handleCancel = () => {
-    setEditingTask(null);
-    setView("list");
+  const onUpdated = (task) => {
+    setTasks(prev => prev.map(t => (t.id === task.id ? task : t)));
+    setEditing(null);
+    setShowForm(false);
   };
 
   const handleDelete = async (id) => {
-    await deleteTask(id);
-    await fetchTasks();
+    if (!window.confirm('Delete this task?')) return;
+    try {
+      await deleteTask(id);
+      setTasks(prev => prev.filter(t => t.id !== id));
+    } catch (e) {
+      alert(e?.response?.data?.message || e.message || 'Delete failed');
+    }
   };
 
-  const handleStatusChange = async (id, newStatus) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    await updateTask(id, { ...task, status: newStatus });
-    await fetchTasks();
+  const startEdit = (task) => {
+    setEditing(task);
+    setShowForm(true);
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    setShowForm(true);
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Your Tasks</h2>
-          <p className="text-sm text-gray-500">Manage and track your tasks</p>
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl">Your Tasks</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={openCreate} className="px-3 py-1 bg-green-600 text-white rounded">Add Task</button>
         </div>
-        {view === "list" && (
-          <div>
-            <button
-              onClick={() => { setEditingTask(null); setView("form"); }}
-              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 transition"
-            >
-              + Add Task
-            </button>
-
-            <button
-              onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/login";
-        }}
-           className="btn btn-outline-danger btn-sm"
-    >
-            Logout
-</button>
-
-          </div>
-        )}
       </div>
 
-      <div>
-        {view === "form" ? (
-          <div className="mb-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-700">{editingTask ? "Edit Task" : "Add Task"}</h3>
-              <button
-                onClick={handleCancel}
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-            </div>
-            <TaskForm onSubmit={handleSave} existingTask={editingTask} onCancel={handleCancel} />
-          </div>
-        ) : (
-          <TaskList
-            tasks={tasks}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onStatusChange={handleStatusChange}
+      {showForm && (
+        <div className="mb-4">
+          <TaskForm
+            initial={editing}
+            onCreated={onCreated}
+            onUpdated={onUpdated}
+            onCancel={() => { setShowForm(false); setEditing(null); }}
           />
-        )}
-      </div>
+        </div>
+      )}
+
+      {err && <div className="text-red-600 mb-2">{err}</div>}
+
+      <ul className="space-y-3">
+        {tasks.map(t => (
+          <li key={t.id} className="p-3 border rounded bg-white flex justify-between items-start">
+            <div>
+              <div className="font-semibold">{t.title}</div>
+              {t.description && <div className="text-sm text-gray-700">{t.description}</div>}
+              <div className="text-xs text-gray-500">status: {t.status}</div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => startEdit(t)} className="px-2 py-1 bg-yellow-500 text-white rounded text-sm">Edit</button>
+              <button onClick={() => handleDelete(t.id)} className="px-2 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
-};
-
-export default Dashboard;
+}

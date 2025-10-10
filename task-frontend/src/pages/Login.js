@@ -1,34 +1,35 @@
 // src/pages/Login.js
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/authService";
 import Swal from "sweetalert2";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (user) {
+      if (user.role === "admin") navigate("/admin");
+      else navigate("/");
+    }
+    // eslint-disable-next-line
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setErr("");
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
-
-      const token = res.data?.token;
-      const user = res.data?.user;
-
-      if (!token) {
-        throw new Error("No token returned from server");
-      }
-
-      // Save token + optional user info
-      localStorage.setItem("token", token);
-      if (user) localStorage.setItem("user", JSON.stringify(user));
+      const data = await login({ email, password });
+      // ensure token & user are persisted (authService also sets them, but do it here to be explicit)
+      if (data.token) localStorage.setItem("token", data.token);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      // navigate only after storage is set
+      if (data?.user?.role === "admin") navigate("/admin");
+      else navigate("/");
 
       await Swal.fire({
         icon: "success",
@@ -37,18 +38,14 @@ const Login = () => {
         timer: 900,
         showConfirmButton: false,
       });
-
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-      const message = err.response?.data?.message || err.message || "Invalid credentials";
+    } catch (ex) {
+      setErr(ex?.message || "Login failed");
+      console.error("Login error:", ex);
       Swal.fire({
         icon: "error",
         title: "Login failed",
-        text: message,
+        text: ex?.message || "Invalid credentials",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -56,6 +53,7 @@ const Login = () => {
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
       <div className="card shadow p-4" style={{ width: "420px" }}>
         <h3 className="text-center mb-3 text-primary">Welcome back</h3>
+        {err && <div className="text-danger text-center mb-3">{err}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
@@ -67,7 +65,6 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
 
@@ -80,12 +77,11 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
 
-          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+          <button type="submit" className="btn btn-primary w-100">
+            Login
           </button>
         </form>
 
