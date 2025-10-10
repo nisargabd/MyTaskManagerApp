@@ -67,6 +67,17 @@ const Dashboard = () => {
             >
               + Add Task
             </button>
+
+            <button
+              onClick={() => {
+              localStorage.removeItem("token");
+              window.location.href = "/login";
+        }}
+           className="btn btn-outline-danger btn-sm"
+    >
+            Logout
+</button>
+
           </div>
         )}
       </div>
