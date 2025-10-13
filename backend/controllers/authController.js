@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../models');
 const User = db.User;
 
-const jwtSecret = (process.env.JWT_SECRET || 'dev_secret').replace(/(^"|"$)/g, '');
+const jwtSecret = (process.env.JWT_SECRET).replace(/(^"|"$)/g, ''); 
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
 
 exports.register = async (req, res) => {

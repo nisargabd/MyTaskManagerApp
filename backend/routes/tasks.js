@@ -5,12 +5,36 @@ const Task = db.Task;
 const { auth } = require('../middleware/authMiddleware');
 
 // GET /api/tasks (user tasks; admin can use ?all=true)
+const { Op } = require('sequelize');
+
 router.get('/', auth, async (req, res) => {
   try {
+    const { page = 1, limit = 10, search, status, sortBy = 'createdAt', order = 'desc', all } = req.query;
+    const offset = (page - 1) * limit;
+
     const where = {};
-    if (!(req.user.role === 'admin' && req.query.all === 'true')) where.userId = req.user.id;
-    const tasks = await Task.findAll({ where, order: [['createdAt','DESC']] });
-    res.json(tasks);
+    if (!(req.user.role === 'admin' && all === 'true')) where.userId = req.user.id;
+    if (search) {
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (status) where.status = status;
+
+    const { count, rows } = await Task.findAndCountAll({
+      where,
+      order: [[sortBy, order.toUpperCase()]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    res.json({
+      tasks: rows,
+      total: count,
+      page: parseInt(page),
+      totalPages: Math.ceil(count / limit),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -58,8 +82,6 @@ router.put('/:id', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-// DELETE /api/tasks/:id  -> only owner or admin
 router.delete('/:id', auth, async (req, res) => {
   try {
     const task = await Task.findByPk(req.params.id);

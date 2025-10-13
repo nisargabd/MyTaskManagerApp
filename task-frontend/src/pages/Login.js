@@ -1,10 +1,9 @@
-// src/pages/Login.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
 import Swal from "sweetalert2";
 
-const Login = () => {
+const Login = ({ setUser }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,20 +15,18 @@ const Login = () => {
       if (user.role === "admin") navigate("/admin");
       else navigate("/");
     }
-    // eslint-disable-next-line
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
     try {
       const data = await login({ email, password });
-      // ensure token & user are persisted (authService also sets them, but do it here to be explicit)
       if (data.token) localStorage.setItem("token", data.token);
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
-      // navigate only after storage is set
-      if (data?.user?.role === "admin") navigate("/admin");
-      else navigate("/");
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user); // ✅ instantly updates navbar
+      }
 
       await Swal.fire({
         icon: "success",
@@ -38,6 +35,9 @@ const Login = () => {
         timer: 900,
         showConfirmButton: false,
       });
+
+      if (data?.user?.role === "admin") navigate("/admin");
+      else navigate("/");
     } catch (ex) {
       setErr(ex?.message || "Login failed");
       console.error("Login error:", ex);

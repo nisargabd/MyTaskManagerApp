@@ -1,10 +1,9 @@
-// src/pages/Register.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2"; // ✅ import SweetAlert2
+import Swal from "sweetalert2";
 import { register } from "../services/authService";
 
-const Register = () => {
+const Register = ({ setUser }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,8 +16,6 @@ const Register = () => {
     setErr("");
     try {
       const data = await register({ username, email, password, role });
-
-      // ✅ If successful registration
       if (data?.user) {
         await Swal.fire({
           icon: "success",
@@ -27,14 +24,12 @@ const Register = () => {
           showConfirmButton: false,
           timer: 2000,
         });
-        nav("/login"); // ✅ redirect to login page
+        nav("/login");
       }
     } catch (ex) {
       const message = ex?.response?.data?.message || ex.message || "Register failed";
       setErr(message);
       console.error("Register error:", ex);
-
-      // ❌ show error alert
       Swal.fire({
         icon: "error",
         title: "Registration Failed",

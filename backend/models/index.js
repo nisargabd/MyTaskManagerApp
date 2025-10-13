@@ -18,7 +18,6 @@ const User = sequelize.define(
   { tableName: 'users', timestamps: true }
 );
 
-// Task model (userId allowed null to avoid migrations failing on existing data)
 const Task = sequelize.define(
   'Task',
   {
