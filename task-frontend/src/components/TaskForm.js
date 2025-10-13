@@ -1,141 +1,95 @@
-import React, { useState, useEffect } from "react";
-import { createTask, updateTask } from "../services/taskService";
+// src/components/TaskForm.js
+import React, { useState, useEffect } from 'react';
+import { createTask, updateTask } from '../services/taskService';
 
-const statusOptions = [
-  { value: "todo", label: "To Do" },
-  { value: "in-progress", label: "In Progress" },
-  { value: "done", label: "Done" },
-];
-
-const TaskForm = ({ initial = null, onCreated, onUpdated, onCancel }) => {
-  const [title, setTitle] = useState(initial?.title || "");
-  const [description, setDescription] = useState(
-    initial?.description || ""
-  ); /* renamed to description */
-  const [status, setStatus] = useState("todo");
-  const [err, setErr] = useState("");
-  const editing = !!initial?.id;
+export default function TaskForm({ initial = null, onCreated, onUpdated, onCancel }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('todo');
+  const [err, setErr] = useState('');
 
   useEffect(() => {
-    setTitle(initial?.title || "");
-    setDescription(initial?.description || "");
-    setErr("");
+    if (initial) {
+      setTitle(initial.title || '');
+      setDescription(initial.description || '');
+      setStatus(initial.status || 'todo'); // ✅ ensure status is prefilled
+    }
   }, [initial]);
 
-  const submit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setErr("");
-    if (!title.trim()) return setErr("Title required");
+    setErr('');
+
+    if (!title.trim()) {
+      setErr('Title is required');
+      return;
+    }
+
+    const payload = { title, description, status }; // ✅ include status in payload
     try {
-      if (editing) {
-        const updated = await updateTask(
-          initial.id,
-          {
-            title: title.trim(),
-            description: description.trim() || null,
-          }
-        );
-        if (onUpdated) onUpdated(updated);
+      if (initial) {
+        const updatedTask = await updateTask(initial.id, payload);
+        onUpdated(updatedTask); // pass updated task back
       } else {
-        const created = await createTask({
-          title: title.trim(),
-          description: description.trim() || null,
-        });
-        if (onCreated) onCreated(created); // parent updates UI
+        await createTask(payload);
+        onCreated();
       }
-      setTitle("");
-      setDescription("");
-      if (onCancel) onCancel(); // close form after success
-    } catch (ex) {
-      setErr(ex?.response?.data?.message || ex.message || "Save failed");
-      console.error("TaskForm error:", ex);
+    } catch (error) {
+      setErr(error?.response?.data?.message || error.message || 'Failed to save task');
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-        {editing ? "Edit Task" : "Add New Task"}
-      </h2>
-      <form onSubmit={submit} className="space-y-4">
-        {err && <div className="text-red-600">{err}</div>}
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-gray-700 font-medium mb-1"
-          >
-            Title
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm"
-            placeholder="Enter task title"
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="border p-4 rounded bg-gray-50 space-y-3">
+      {err && <div className="text-red-600">{err}</div>}
 
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-gray-700 font-medium mb-1"
-          >
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={3}
-            className="mt-1 block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm"
-            placeholder="Enter task description"
-          />
-        </div>
+      <div>
+        <label className="block font-medium mb-1">Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="status"
-              className="block text-gray-700 font-medium mb-1"
-            >
-              Status
-            </label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm"
-            >
-              {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div>
+        <label className="block font-medium mb-1">Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
+      </div>
 
-          <div className="flex items-end space-x-3">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 transition"
-            >
-              {editing ? "Update Task" : "Add Task"}
-            </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md shadow hover:bg-gray-400 transition"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
+      <div>
+        <label className="block font-medium mb-1">Status</label>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="border p-2 w-full rounded"
+        >
+          <option value="todo">Todo</option>
+          <option value="inprogress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          {initial ? 'Update' : 'Create'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
-};
-
-export default TaskForm;
+}
