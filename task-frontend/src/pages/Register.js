@@ -1,93 +1,106 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 import { register } from "../services/authService";
+import Swal from "sweetalert2";
 
-const Register = ({ setUser }) => {
+const Register = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("user"); // default to user
   const [err, setErr] = useState("");
-  const nav = useNavigate();
 
-  const submit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
+
     try {
-      const data = await register({ username, email, password, role });
-      if (data?.user) {
-        await Swal.fire({
-          icon: "success",
-          title: "Registration Successful!",
-          text: "You can now log in to your account.",
-          showConfirmButton: false,
-          timer: 2000,
-        });
-        nav("/login");
-      }
+      await register({ username, email, password, role });
+
+      await Swal.fire({
+        icon: "success",
+        title: "Registered successfully",
+        text: "Please login to continue",
+        timer: 1000,
+        showConfirmButton: false,
+      });
+
+      navigate("/login");
     } catch (ex) {
-      const message = ex?.response?.data?.message || ex.message || "Register failed";
-      setErr(message);
-      console.error("Register error:", ex);
+      setErr(ex?.message || "Registration failed");
       Swal.fire({
         icon: "error",
-        title: "Registration Failed",
-        text: message,
+        title: "Registration failed",
+        text: ex?.message || "Error creating account",
       });
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white shadow-lg rounded-md mt-8">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Register</h2>
+    <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
+      <div className="card shadow p-4" style={{ width: "420px" }}>
+        <h3 className="text-center mb-3 text-primary">Register</h3>
+        {err && <div className="text-danger text-center mb-3">{err}</div>}
 
-      {err && <div className="text-red-600 mb-2 text-center">{err}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label">Username</label>
+            <input
+              type="text"
+              className="form-control"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
 
-      <form onSubmit={submit}>
-        <input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
-          required
-        />
-        <input
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
-          required
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full mb-3 p-2 border rounded"
-          required
-        />
+          <div className="mb-3">
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <label className="block mb-3">
-          Role
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="w-full p-2 border rounded mt-1"
-          >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-        </label>
+          <div className="mb-3">
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          Register
-        </button>
-      </form>
+          <div className="mb-3">
+            <label className="form-label">Role</label>
+            <select
+              className="form-select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <button type="submit" className="btn btn-primary w-100">
+            Register
+          </button>
+        </form>
+
+        <p className="text-center mt-3 mb-0">
+          Already have an account?{" "}
+          <a href="/login" className="text-decoration-none">
+            Login
+          </a>
+        </p>
+      </div>
     </div>
   );
 };

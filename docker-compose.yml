@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    container_name: taskdb
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: taskdb   # New DB name
+    ports:
+      - "5435:5432"         # host:container
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: task_backend
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432 
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: taskdb         # internal port      # must match POSTGRES_DB
+    depends_on:
+      - db
+
+  frontend:
+    build: ./task-frontend
+    container_name: task_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+

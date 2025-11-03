@@ -12,6 +12,7 @@ const Login = ({ setUser }) => {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "null");
     if (user) {
+      // Role-based redirect
       if (user.role === "admin") navigate("/admin");
       else navigate("/");
     }
@@ -22,10 +23,11 @@ const Login = ({ setUser }) => {
     setErr("");
     try {
       const data = await login({ email, password });
+
       if (data.token) localStorage.setItem("token", data.token);
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user); // ✅ instantly updates navbar
+        setUser(data.user); // update navbar immediately
       }
 
       await Swal.fire({
@@ -36,11 +38,11 @@ const Login = ({ setUser }) => {
         showConfirmButton: false,
       });
 
-      if (data?.user?.role === "admin") navigate("/admin");
-      else navigate("/");
+      // Role-based navigation
+     if (data?.user?.role === "admin") navigate("/admin");
+else navigate("/");
     } catch (ex) {
       setErr(ex?.message || "Login failed");
-      console.error("Login error:", ex);
       Swal.fire({
         icon: "error",
         title: "Login failed",

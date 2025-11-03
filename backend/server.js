@@ -18,7 +18,8 @@ const app = express();
 // middlewares
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3000', // React dev server
+  origin: ['http://localhost:3000',
+  'http://localhost:3003'], // React dev server
   credentials: true
 }));
 app.use(morgan('dev'));

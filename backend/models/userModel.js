@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const {sequelize} = require('../config/db'); // adjust path if your db config file has a different name
+const { sequelize } = require('../config/db'); // adjust path if needed
 
 const User = sequelize.define('User', {
   id: {
@@ -7,7 +7,7 @@ const User = sequelize.define('User', {
     autoIncrement: true,
     primaryKey: true,
   },
-  name: {
+  username: {               // match frontend field
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -20,6 +20,16 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'user',           // default role
+    validate: {
+      isIn: [['user', 'admin']],    // optional: only allow these roles
+    },
+  },
+}, {
+  tableName: 'Users',   // optional: ensure table name
 });
 
 module.exports = User;
